@@ -1,89 +1,112 @@
+import Playfield from './playfield.js';
+import Piece from './piece.js';
+
 export default class Game {
-  score = 0;
-  lines = 0;
-  level = 0;
+    static points = {
+        '1': 40,
+        '2': 100,
+        '3': 300,
+        '4': 1200
+    };
 
-  playField = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  ];
+    _score = 0;
+    _lines = 0;
+    _topOut = false;
+    _activePiece = null;
+    _nextPiece = null;
 
-  activePiece = {
-    x: 0,
-    y: 0,
-    blocks: [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 0, 0]
-    ]
-  }
-
-  movePieceLeft() {
-    this.activePiece.x -= 1;
-
-    if(this.hasCollision()) {
-      this.activePiece.x += 1;
+    constructor(rows, columns) {
+        this._playfield = new Playfield(rows, columns);
+        this._updatePieces();
     }
-  }
 
-  movePieceRight() {
-    this.activePiece.x += 1;
-
-    if(this.hasCollision()) {
-      this.activePiece.x -= 1;
+    get level() {
+        return Math.floor(this._lines * 0.1);
     }
-  }
 
-  movePieceDown() {
-    this.activePiece.y += 1;
-
-    if(this.hasCollision()) {
-      this.activePiece.y -= 1;
+    get state() {
+        return {
+            score: this._score,
+            level: this.level,
+            lines: this._lines,
+            playfield: this._playfield,
+            activePiece: this._activePiece,
+            nextPiece: this._nextPiece,
+            isGameOver: this._topOut
+        };
     }
-  }
 
-  hasCollision() {
-    const { blocks, x: pieceX, y: pieceY } = this.activePiece;
+    reset() {
+        this._score = 0;
+        this._lines = 0;
+        this._topOut = false;
+        this._playfield.reset();
+        this._updatePieces();
+    }
 
-    for(let y = 0; y < blocks.length; y++) {
-      for(let x = 0; x < blocks[y].length; x++) {
-        if(blocks[y][x] &&
-          (this.playField[pieceY + y] === undefined || this.playField[pieceY + y][pieceX + x] === undefined) ||
-          this.playField[pieceY + y][pieceX + x]) {
-          return true;
+    movePieceLeft() {
+        this._activePiece.x -= 1;
+
+        if (this._playfield.hasCollision(this._activePiece)) {
+            this._activePiece.x += 1;
         }
-      }
     }
-    return false;
-  }
 
-  lockPiece() {
-    const { blocks, x: pieceX, y: pieceY } = this.activePiece;
+    movePieceRight() {
+        this._activePiece.x += 1;
 
-    for(let y = 0; y < blocks.length; y++) {
-      for(let x = 0; x < blocks[y].length; x++) {
-        if(blocks[y][x]) {
-          this.playField[pieceY + y][pieceX + x] = blocks[y][x];
+        if (this._playfield.hasCollision(this._activePiece)) {
+            this._activePiece.x -= 1;
         }
-      }
     }
-  }
+
+    movePieceDown() {
+        if (this._topOut) return;
+
+        this._activePiece.y += 1;
+
+        if (this._playfield.hasCollision(this._activePiece)) {
+            this._activePiece.y -= 1;
+            this._update();
+        }
+    }
+
+    rotatePiece() {
+        this._activePiece.rotate();
+
+        if (this._playfield.hasCollision(this._activePiece)) {
+            this._activePiece.rotate(false);
+        }
+    }
+
+    _update() {
+        this._updatePlayfield();
+        this._updateScore();
+        this._updatePieces();
+
+        if (this._playfield.hasCollision(this._activePiece)) {
+            this._topOut = true;
+        }
+    }
+
+    _updatePlayfield() {
+        this._playfield.lockPiece(this._activePiece);
+    }
+
+    _updateScore() {
+        const clearedLines = this._playfield.clearLines();
+
+        if (clearedLines > 0) {
+            this._score += Game.points[clearedLines] * (this.level + 1);
+            this._lines += clearedLines;
+        }
+    }
+
+    _updatePieces() {
+        this._activePiece = this._nextPiece || new Piece();
+        this._nextPiece = new Piece();
+        console.log('_updatePieces', this._activePiece, this._nextPiece)
+        this._activePiece.x = Math.floor((this._playfield.columns - this._activePiece.width) / 2);
+        this._activePiece.y = -1;
+    }
 }

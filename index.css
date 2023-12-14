@@ -1,8 +1,19 @@
 body {
-  background: black;
+    margin: 0;
+    background-color: black;
 }
 
-h1 {
-  display: flex;
-  justify-content: center;
+#root {
+    padding: 3rem;
+    text-align: center
+}
+
+#root h1 {
+    font-family: 'Press Start 2P', Consolas, monospace;
+    color: white;
+}
+
+#root canvas {
+    display: block;
+    margin: 0 auto;
 }

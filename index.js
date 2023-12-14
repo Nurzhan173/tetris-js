@@ -1,7 +1,18 @@
 import Game from './src/game.js';
+import View from './src/view.js';
+import Controller from './src/controller.js';
 
-const game = new Game();
+const GRID_ROWS = 20;
+const GRID_COLUMNS = 10;
 
-window.game = game;
+const element = document.querySelector('#root');
 
-console.log(game)
+const game = new Game(GRID_ROWS, GRID_COLUMNS);
+const view = new View({
+    element,
+    width: 480,
+    height: 640,
+    rows: GRID_ROWS,
+    columns: GRID_COLUMNS
+});
+const controller = new Controller(game, view);
